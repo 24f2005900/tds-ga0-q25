@@ -35,24 +35,26 @@ async def calculate_latency(payload: AnalyticsRequest):
     results = {}
     
     for region in payload.regions:
-        region_data = [d for d in data if d.get("region") == region]
-        
-        if not region_data:
-            continue
+            region_data = [d for d in data if d.get("region") == region]
             
-        latencies = [d["latency"] for d in region_data]
-        uptimes = [d["uptime"] for d in region_data]
-        
-        avg_latency = float(np.mean(latencies))
-        p95_latency = float(np.percentile(latencies, 95))
-        avg_uptime = float(np.mean(uptimes))
-        breaches = sum(1 for l in latencies if l > payload.threshold_ms)
-        
-        results[region] = {
-            "avg_latency": avg_latency,
-            "p95_latency": p95_latency,
-            "avg_uptime": avg_uptime,
-            "breaches": breaches
-        }
+            if not region_data:
+                continue
+                
+            # Safely extract values only if the keys exist in the dictionary
+            latencies = [d["latency"] for d in region_data if "latency" in d]
+            uptimes = [d["uptime"] for d in region_data if "uptime" in d]
+            
+            # Avoid errors if the filtered lists are empty
+            avg_latency = float(np.mean(latencies)) if latencies else 0.0
+            p95_latency = float(np.percentile(latencies, 95)) if latencies else 0.0
+            avg_uptime = float(np.mean(uptimes)) if uptimes else 0.0
+            breaches = sum(1 for l in latencies if l > payload.threshold_ms)
+            
+            results[region] = {
+                "avg_latency": avg_latency,
+                "p95_latency": p95_latency,
+                "avg_uptime": avg_uptime,
+                "breaches": breaches
+            }
         
     return results
